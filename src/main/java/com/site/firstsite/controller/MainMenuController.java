@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 @RestController
-@RequestMapping("main")
+@RequestMapping("/main")
 public class MainMenuController {
     @Autowired
     UserRepository userRepository;
@@ -25,7 +25,7 @@ public class MainMenuController {
     /**
      *  Берем список пользователей и
      *  возвращаем список хэш-таблиц
-     *  где будут только имя, статус и uri
+     *  где будут только имя, статус и urim
      *
      * @param users список пользователей для обработки
      * @return список хэш-таблиц
@@ -35,8 +35,8 @@ public class MainMenuController {
         for (int i=0;i<users.size();i++) {
             Map<String,String> res= new HashMap<String,String>();
             res.put("username",users.get(i).getUsername());
-            res.put("status",users.get(i).isStatus() ? "Online":"Offline");
-            res.put("uri",users.get(i).getUrim());
+            res.put("status",users.get(i).isStatus() ? "true" : "false");
+            res.put("urim",users.get(i).getUrim());
             result.add(res);
         }
         return result;
@@ -55,23 +55,24 @@ public class MainMenuController {
      * */
     @RequestMapping(value = "/{id}",
                     method = RequestMethod.PUT,
+                    consumes = MediaType.APPLICATION_JSON_VALUE,
                     produces = MediaType.APPLICATION_JSON_VALUE)
     @Order
     public Callable<ResponseEntity> update(@PathVariable String id,
-                                           @RequestBody boolean status) throws NotFoundException {
+                                           @RequestBody String status) throws NotFoundException {
         return () ->{
             Timestamp updateTime = new Timestamp((new Date()).getTime());
             User usersFromDb = userRepository.findById(Long.parseLong(id));
             try{
                 if(usersFromDb==null){
-                    throw new NotFoundException();
+                    throw new NotFoundException("NotFound");
                 }
                 boolean stat_bef= usersFromDb.isStatus();
-                usersFromDb.setStatus(status);
+                usersFromDb.setStatus(Boolean.getBoolean(status));
                 userRepository.saveAndFlush(usersFromDb);
                 ResponseJson res = new ResponseJson();
                 res.setId(new Long(id));
-                res.setStatusAfter(status);
+                res.setStatusAfter(Boolean.getBoolean(status));
                 res.setStatusBefore(stat_bef);
                 return new ResponseEntity<>(res, HttpStatus.ACCEPTED);
             }
